@@ -54,7 +54,7 @@ module top_test();
 
     initial begin
         $display("and away we go!!!1");
-        #1000 $finish;           //longer sim, mask clock is now 16 bits. 5 sec run on vm, 30M vcd.
+        #325 $finish;           //longer sim, mask clock is now 16 bits. 5 sec run on vm, 30M vcd.
     end
 
 endmodule
