@@ -1,12 +1,14 @@
-# VerilogSkeleton
+# PL_L0_BCD7
 
-Skeleton project for Verilog / IceStorm.
+Platform: Upduino v2 / v2.1
 
-The idea is to make top.v the main module for the .bin file, and top_test.v is the testbench top module. You can have any number of submodules - see Makefile for how to organize this.
+Simple test of writing a non-clocked "always" block that does blocking combinatorial logic. Just because I hadn't done that before. See [the ProgLogLessons wiki under Lesson 0](https://github.com/SamWibatt/ProgLogLessons/wiki/Lesson-00---Combinatorial-logic) for details.
+
+Based on [my VerilogSkeleton project](https://github.com/SamWibatt/VerilogSkeleton) which supplies a blinky.
 
 # Usage
 
-`make all` is intended to build the .bin output file to send to the target hardware
+`make all` is intended to build the .bin output file to send to the target hardware. You still need to run iceprog to actually send it.
 
 toolchain is yosys / nextpnr / icepack
 
@@ -16,32 +18,5 @@ toolchain is iverilog / vvp / vcd2fst, yielding a .fst file that can be viewed i
 
 `make clean` does the usual cleanup of all the non-source files.
 
-stdout and stderr are redirected during the compile, to build_top_out.txt and build_top_err.txt for the "all" target, to sim_top_tb_out.txt and sim_top_tb_err.txt in the "test" target.
-
-*need to test `make flash` and `make gui` and `make pll`*
-
 Makefile, Makefile.icestorm, and upduino_v2.pcf are copied and modified from osresearch's code at https://github.com/osresearch/up5k licensed under GPL3
 
-# test to see if markdown on github can syntax highlight verilog
-
-Oh wow it looks like the Atom previewer, anyway
-
-And indeed github does too!
-
-```verilog
-//Based on Dan Gisselquist's blinky at https://zipcpu.com/blog/2017/05/19/blinky.html
-`default_nettype none
-
-module blinky(
-    input wire i_clk,
-    output wire o_led
-);
-
-    parameter CBITS = 26;
-
-    reg	[CBITS-1:0]	counter = 0;
-    always @(posedge i_clk)
-    counter <= counter + 1'b1;
-    assign o_led = counter[CBITS-1];
-endmodule
-```
