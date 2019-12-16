@@ -2,7 +2,7 @@
 PL_L0_BCD7.v - implements a purely async/combinatorial BCD to 7-segment converter.
 
 val is a 4-bit input of the value we want to display
-hex is 0 if we only want to display 0-9, 1 if we want 0-F. Values A-F when hex is 0 will just show "-"
+dec is 1 if we only want to display 0-9, 0 if we want 0-F. Values A-F when dec is 1 will just show "-"
 - maybe blank later but for now do a - so we know something is being driven.
 seg represents the 7 segments on the display, active high. Will probably invert to drive LEDs.
 
@@ -17,7 +17,7 @@ Where the segments are numbered thus:
 So 1 is the top one there, others should be pretty unambiguous.
 
 Truth table: in all cases lsb to right
-    hex  val   seg            seg(hex)
+    dec  val   seg            seg(dec)
   0:  0  0000  1 1 0  1 1 1 1 (6F)
   1:  0  0001  0 1 0  0 1 0 0 (24)
   2:  0  0010  1 0 1  1 1 1 0 (5E)
@@ -65,7 +65,7 @@ Truth table: in all cases lsb to right
   seg 5 = y = C'D' + B'E + B'C + A'D'E + A'BC'
   seg 6 = y = B'C'E' + B'C'D + B'DE' + A'BD' + BC'D' + A'C'DE + B'CD'E + A'CDE'
 
-  where A = hex, B = val[3], ... E = val[0]
+  where A = dec, B = val[3], ... E = val[0]
 
   Let's try a show of it thru yosys like this from https://rhye.org/post/fpgas-for-software-engineers-0-basics/
 
@@ -84,19 +84,19 @@ EOF
 
 module PL_L0_BCD7(
     input wire[3:0] val,
-    input wire hex,
+    input wire dec,
     output reg[6:0] seg
 );
 
     //Here is the combinatorial logic for the BCD to 7 seg converter.
-    //should trigger whenever the value or hex flag changes.
-    always @(val, hex) begin
-        seg[0] = (~hex & ~val[1] & ~val[0]) | (~val[3] & ~val[1] & ~val[0]) | (~val[3] & val[2] & ~val[1]) | (~val[3] & val[2] & ~val[0]) | (val[3] & ~val[2] & ~val[1]) | (~hex & val[3] & val[1]);
-        seg[1] = (~val[3] & val[1]) | (~val[3] & ~val[2] & ~val[0]) | (~val[3] & val[2] & val[0]) | (~hex & val[2] & val[1]) | (val[3] & ~val[2] & ~val[1]) | (~hex & val[3] & ~val[0]);
-        seg[2] = (~val[3] & ~val[2]) | (~val[2] & ~val[1]) | (~hex & ~val[2] & ~val[0]) | (~val[3] & ~val[1] & ~val[0]) | (~val[3] & val[1] & val[0]) | (~hex & val[3] & ~val[1] & val[0]);
-        seg[3] = (~val[2] & ~val[1] & ~val[0]) | (~val[3] & val[1] & ~val[0]) | (~hex & val[3] & val[1]) | (~hex & val[3] & val[2]);
-        seg[4] = (~val[2] & val[1]) | (val[1] & ~val[0]) | (val[3] & ~val[2]) | (val[3] & val[0]) | (hex & val[3]) | (~val[3] & val[2] & ~val[1]);
-        seg[5] = (~val[2] & ~val[1]) | (~val[3] & val[0]) | (~val[3] & val[2]) | (~hex & ~val[1] & val[0]) | (~hex & val[3] & ~val[2]);
-        seg[6] = (~val[3] & ~val[2] & ~val[0]) | (~val[3] & ~val[2] & val[1]) | (~val[3] & val[1] & ~val[0]) | (~hex & val[3] & ~val[1]) | (val[3] & ~val[2] & ~val[1]) | (~hex & ~val[2] & val[1] & val[0]) | (~val[3] & val[2] & ~val[1] & val[0]) | (~hex & val[2] & val[1] & ~val[0]);
+    //should trigger whenever the value or dec flag changes.
+    always @(val, dec) begin
+        seg[0] = (~dec & ~val[1] & ~val[0]) | (~val[3] & ~val[1] & ~val[0]) | (~val[3] & val[2] & ~val[1]) | (~val[3] & val[2] & ~val[0]) | (val[3] & ~val[2] & ~val[1]) | (~dec & val[3] & val[1]);
+        seg[1] = (~val[3] & val[1]) | (~val[3] & ~val[2] & ~val[0]) | (~val[3] & val[2] & val[0]) | (~dec & val[2] & val[1]) | (val[3] & ~val[2] & ~val[1]) | (~dec & val[3] & ~val[0]);
+        seg[2] = (~val[3] & ~val[2]) | (~val[2] & ~val[1]) | (~dec & ~val[2] & ~val[0]) | (~val[3] & ~val[1] & ~val[0]) | (~val[3] & val[1] & val[0]) | (~dec & val[3] & ~val[1] & val[0]);
+        seg[3] = (~val[2] & ~val[1] & ~val[0]) | (~val[3] & val[1] & ~val[0]) | (~dec & val[3] & val[1]) | (~dec & val[3] & val[2]);
+        seg[4] = (~val[2] & val[1]) | (val[1] & ~val[0]) | (val[3] & ~val[2]) | (val[3] & val[0]) | (dec & val[3]) | (~val[3] & val[2] & ~val[1]);
+        seg[5] = (~val[2] & ~val[1]) | (~val[3] & val[0]) | (~val[3] & val[2]) | (~dec & ~val[1] & val[0]) | (~dec & val[3] & ~val[2]);
+        seg[6] = (~val[3] & ~val[2] & ~val[0]) | (~val[3] & ~val[2] & val[1]) | (~val[3] & val[1] & ~val[0]) | (~dec & val[3] & ~val[1]) | (val[3] & ~val[2] & ~val[1]) | (~dec & ~val[2] & val[1] & val[0]) | (~val[3] & val[2] & ~val[1] & val[0]) | (~dec & val[2] & val[1] & ~val[0]);
     end
 endmodule

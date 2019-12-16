@@ -31,7 +31,7 @@ module top_test();
     wire[6:0] segout;
     PL_L0_BCD7 bcd27seg(
         .val(count[3:0]),
-        .hex(count[4]),
+        .dec(count[4]),
         .seg(segout)
     );
 
@@ -40,7 +40,7 @@ module top_test();
         //this should drive the blinkingness
         led_reg <= led_b_outwire;
 
-        //and this the bcd output - just cycle the counter and high bit is "hex" and the lower 4 are the 7-seg
+        //and this the bcd output - just cycle the counter and high bit is "dec" and the lower 4 are the 7-seg
         count <= count + 1;
     end
 
