@@ -1,0 +1,89 @@
+DEVICE-upduino ?= up5k
+FOOTPRINT-upduino ?= sg48
+PIN_SRC-upduino ?= upduino_v2.pcf
+
+DEVICE-icebreaker ?= up5k
+FOOTPRINT-icebreaker ?= sg48
+PIN_SRC-icebreaker ?= icebreaker.pcf
+
+
+DEVICE-tinyfpga := lp8k
+FOOTPRINT-tinyfpga := cm81
+PIN_SRC-tinyfpga := tinyfpga-bx.pcf
+
+DEVICE-tomu := up5k
+FOOTPRINT-tomu := uwg30
+PIN_SRC-tomu := tomu.pcf
+
+USB_DEV ?= 1-1:1.0
+BOARD ?= upduino
+DEVICE := $(DEVICE-$(BOARD))
+FOOTPRINT := $(FOOTPRINT-$(BOARD))
+PIN_SRC := $(PIN_SRC-$(BOARD))
+
+
+PNR ?= $(ICEPATH)nextpnr-ice40
+.SECONDARY:
+
+
+
+
+%.flash: %.bin
+	$(ICEPATH)iceprog -e 128 # Force a reset
+	$(ICEPATH)iceprog $<
+	echo $(USB_DEV) | tee /sys/bus/usb/drivers/ftdi_sio/bind
+
+# OH WOW THIS IS CLUMSY BUT I THINK IT WORKS. what it does is given a variable alldeps that looks like
+# top.v submod1.v submod2.v
+# prepends "read_verilog " then trims ws from beginning and end of alldeps and replaces any ".v" followed by a space with ".v; read_verilog "
+# than appends ; which transforms that one into
+# read_verilog top.v; read_verilog submod1.v; read_verilog submod2.v;
+# also works if there is only one .v file in the dependency list!
+# THIS HAS ORDER DEPENDENCY THAT ASSUMES JSON RULE WILL RUN FIRST and create the out and err text files. Probably not a horrible assumption
+%.json: $(alldeps)
+	$(ICEPATH)yosys -p "read_verilog $(subst .v ,.v; read_verilog ,$(strip $(alldeps))); synth_ice40 -top top; write_json $@" 1> build_$*_out.txt 2> build_$*_err.txt
+
+%.bin: %.asc
+	$(ICEPATH)icepack $< $@ 1>> build_$*_out.txt 2>> build_$*_err.txt
+
+%.asc: $(PIN_SRC) %.json
+	$(PNR) \
+		--$(DEVICE) \
+		--package $(FOOTPRINT) \
+		--asc $@ \
+		--pcf $(PIN_SRC) \
+		--json $(basename $@).json \
+		 1>> build_$*_out.txt 2>> build_$*_err.txt
+
+%.gui: %.json
+	$(PNR) --gui --$(DEVICE) --pcf $(PIN_SRC) --json $< 1>> build_$*_out.txt 2>> build_$*_err.txt
+
+%.bin: %.asc
+	$(ICEPATH)icepack $^ $@ 1>> build_$*_out.txt 2>> build_$*_err.txt
+
+# Generate a desired MHz pll
+pll_%.v:
+	$(ICEPATH)icepll \
+		-i 48 \
+		-o $(subst pll_,,$(basename $@)) \
+		-m \
+		-n $(basename $@) \
+		-f $@
+
+
+
+# give testdeps in the main Makefile as a space-separated list of .v files, just like in good old Makefile fashion
+# THIS HAS ORDER DEPENDENCY THAT ASSUMES VVP RULE WILL RUN FIRST and create the out and err text files. Probably not a horrible assumption
+%.vvp: $(testdeps)
+	iverilog -D TEST -o $@ $(testdeps) 1> sim_$*_out.txt 2> sim_$*_err.txt
+
+%.vcd: %.vvp
+	vvp $< 1>> sim_$*_out.txt 2>> sim_$*_err.txt
+
+%.fst: %.vcd
+	vcd2fst $< $@ 1>> sim_$*_out.txt 2>> sim_$*_err.txt
+
+clean:
+	$(RM) *.blif *.asc *.bin *.json .*.d *.vcd *.vvp *.fst *_out.txt *_err.txt
+
+-include .*.d
