@@ -66,6 +66,17 @@ Truth table: in all cases lsb to right
   seg 6 = y = B'C'E' + B'C'D + B'DE' + A'BD' + BC'D' + A'C'DE + B'CD'E + A'CDE'
 
   where A = hex, B = val[3], ... E = val[0]
+
+  Let's try a show of it thru yosys like this from https://rhye.org/post/fpgas-for-software-engineers-0-basics/
+
+yosys -q << EOF
+read_verilog PL_L0_BCD7.v; // Read in our verilog file
+hierarchy -check; // Check and expand the design hierarchy
+proc; opt; // Convert all processes in the design with logic, then optimize
+fsm; opt;  // Extract and optimize the finite state machines in the design
+synth_ice40 -top top_test;  //will this work? sean adds
+show PL_L0_BCD7; // Generate and display a graphviz output of the BCD to 7seg module
+EOF
 */
 
 
