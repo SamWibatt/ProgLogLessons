@@ -97,8 +97,17 @@ module PL_L0_BCD7(
         seg[3] = (~val[2] & ~val[1] & ~val[0]) | (~val[3] & val[1] & ~val[0]) | (~dec & val[3] & val[1]) | (~dec & val[3] & val[2]);
         seg[4] = (~val[2] & val[1]) | (val[1] & ~val[0]) | (val[3] & ~val[2]) | (val[3] & val[0]) | (dec & val[3]) | (~val[3] & val[2] & ~val[1]);
         seg[5] = (~val[2] & ~val[1]) | (~val[3] & val[0]) | (~val[3] & val[2]) | (~dec & ~val[1] & val[0]) | (~dec & val[3] & ~val[2]);
-        seg[6] = (~val[3] & ~val[2] & ~val[0]) | (~val[3] & ~val[2] & val[1]) | (~val[3] & val[1] & ~val[0]) | (~dec & val[3] & ~val[1]) | (val[3] & ~val[2] & ~val[1]) | (~dec & ~val[2] & val[1] & val[0]) | (~val[3] & val[2] & ~val[1] & val[0]) | (~dec & val[2] & val[1] & ~val[0]);
+        //worky seg[6] = (~val[3] & ~val[2] & ~val[0]) | (~val[3] & ~val[2] & val[1]) | (~val[3] & val[1] & ~val[0]) | (~dec & val[3] & ~val[1]) | (val[3] & ~val[2] & ~val[1]) | (~dec & ~val[2] & val[1] & val[0]) | (~val[3] & val[2] & ~val[1] & val[0]) | (~dec & val[2] & val[1] & ~val[0]);
         //try formula from the quine-mccluskey thingy - newp
         //seg[6] = (~val[3] & ~val[2] & val[1]) | (~val[3] & val[2] & ~val[1] & val[0]) | (~val[3] & val[1] & ~val[0]) | (val[3] & ~val[2] & ~val[1]) | (~dec & val[3] & ~val[1]);
+        //from the pipped python thing - seems to work!
+        seg[6] = (~val[3] & ~val[2] & ~val[0]) |
+            (~val[3] & ~val[2] & val[1]) |
+            (~val[3] & val[1] & ~val[0]) |
+            (~dec & val[3] & ~val[1]) |
+            (val[3] & ~val[2] & ~val[1]) |
+            (~dec & val[3] & ~val[2] & val[0]) |
+            (~val[3] & val[2] & ~val[1] & val[0]) |
+            (~dec & val[2] & val[1] & ~val[0]);
     end
 endmodule
