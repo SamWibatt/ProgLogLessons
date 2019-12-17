@@ -17,7 +17,7 @@ Where the segments are numbered thus:
 So 1 is the top one there, others should be pretty unambiguous.
 
 Truth table: in all cases lsb to right
-    dec  val   seg            seg(dec)
+    dec  val   seg            seg(hex)
   0:  0  0000  1 1 0  1 1 1 1 (6F)
   1:  0  0001  0 1 0  0 1 0 0 (24)
   2:  0  0010  1 0 1  1 1 1 0 (5E)
@@ -46,11 +46,11 @@ Truth table: in all cases lsb to right
   8:  1  1000  1 1 1  1 1 1 1 (7F)
   9:  1  1001  1 1 1  0 1 1 1 (77)
   A:  1  1010  0 0 1  0 0 0 0 (10)
-  B:  1  1010  0 0 1  0 0 0 0 (10)
-  C:  1  1010  0 0 1  0 0 0 0 (10)
-  D:  1  1010  0 0 1  0 0 0 0 (10)
-  E:  1  1010  0 0 1  0 0 0 0 (10)
-  F:  1  1010  0 0 1  0 0 0 0 (10)
+  B:  1  1011  0 0 1  0 0 0 0 (10)
+  C:  1  1100  0 0 1  0 0 0 0 (10)
+  D:  1  1101  0 0 1  0 0 0 0 (10)
+  E:  1  1110  0 0 1  0 0 0 0 (10)
+  F:  1  1111  0 0 1  0 0 0 0 (10)
 
   So how do I turn that into logic? Should I just do it the stupid way and let the tool chain optimize?
   That could be an interesting exercise OR since it's no longer 1988 and I don't have to do everything by hand
@@ -98,5 +98,7 @@ module PL_L0_BCD7(
         seg[4] = (~val[2] & val[1]) | (val[1] & ~val[0]) | (val[3] & ~val[2]) | (val[3] & val[0]) | (dec & val[3]) | (~val[3] & val[2] & ~val[1]);
         seg[5] = (~val[2] & ~val[1]) | (~val[3] & val[0]) | (~val[3] & val[2]) | (~dec & ~val[1] & val[0]) | (~dec & val[3] & ~val[2]);
         seg[6] = (~val[3] & ~val[2] & ~val[0]) | (~val[3] & ~val[2] & val[1]) | (~val[3] & val[1] & ~val[0]) | (~dec & val[3] & ~val[1]) | (val[3] & ~val[2] & ~val[1]) | (~dec & ~val[2] & val[1] & val[0]) | (~val[3] & val[2] & ~val[1] & val[0]) | (~dec & val[2] & val[1] & ~val[0]);
+        //try formula from the quine-mccluskey thingy - newp
+        //seg[6] = (~val[3] & ~val[2] & val[1]) | (~val[3] & val[2] & ~val[1] & val[0]) | (~val[3] & val[1] & ~val[0]) | (val[3] & ~val[2] & ~val[1]) | (~dec & val[3] & ~val[1]);
     end
 endmodule
