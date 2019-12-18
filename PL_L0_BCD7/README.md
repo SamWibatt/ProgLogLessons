@@ -19,4 +19,3 @@ toolchain is iverilog / vvp / vcd2fst, yielding a .fst file that can be viewed i
 `make clean` does the usual cleanup of all the non-source files.
 
 Makefile, Makefile.icestorm, and upduino_v2.pcf are copied and modified from osresearch's code at https://github.com/osresearch/up5k licensed under GPL3
-

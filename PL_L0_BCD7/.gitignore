@@ -12,6 +12,7 @@ pll_*.v
 *.fst
 *_out.txt
 *_err.txt
+*-bak
 
 
 # Byte-compiled / optimized / DLL files

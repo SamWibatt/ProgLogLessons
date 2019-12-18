@@ -1,0 +1,3 @@
+(sym_lib_table
+  (lib (name upduino)(type Legacy)(uri /home/sean/dev/FPGA/ProgLogLessons/PL_L0_BCD7/kicad/PL_L0_BCD07/FPGA_SamWibatt.lib)(options "")(descr ""))
+)
