@@ -7,6 +7,7 @@ module top(
     output wire led_g,              //alive-blinky, use rgb green ... from controller
     output wire led_b,                  //blue led bc rgb driver needs it
     output wire led_r,                   //red led
+    output wire[6:0] segout         // 7 segment display segments, active low. See below for how to use w/active high.
     );
 
     wire clk;
@@ -52,11 +53,42 @@ module top(
 
     //then the blinky module proper
     //let us have it blink on the blue upduino LED.
-    blinky ram(.i_clk(clk),.o_led(led_b_outwire));
+    blinky blinkus(.i_clk(clk),.o_led(led_b_outwire));
 
+    reg[4:0] count = 0;         //input value to bcd, s.t. count[4] is dec bit, count[3:0] the 4-bit input
+    wire[6:0] segraw;           //output from bcd to 7-segment module
+    PL_L0_BCD7 bcd27seg(
+        .val(count[3:0]),
+        .dec(count[4]),
+        .seg(segraw)            // segraw is active high, which you may not want
+    );
+
+    //here converting to what we want for output from segraw. Active low means they need inverting.
+    //active high, you could probably comment this and segraw declaration out and use segout in the .seg() line
+    //of the instantiation of bcd27seg above.
+    assign segout[0] = ~segraw[0];
+    assign segout[1] = ~segraw[1];
+    assign segout[2] = ~segraw[2];
+    assign segout[3] = ~segraw[3];
+    assign segout[4] = ~segraw[4];
+    assign segout[5] = ~segraw[5];
+    assign segout[6] = ~segraw[6];
+
+    parameter PWMbits = 3;              // for dimming have LED on only 1/2^PWMbits of the time
+    reg[PWMbits-1:0] pwmctr = 0;
+    parameter countbits = 23;
+    reg[countbits-1:0] counttimer;      // for timing the advance of the display
     always @(posedge clk) begin
         //this should drive the blinkingness
-        led_b_pwm_reg <= led_b_outwire;
+        led_b_pwm_reg <= (&pwmctr) & led_b_outwire;
+        pwmctr <= pwmctr + 1;
+        //and this the bcd output - just cycle the counter and high bit is "dec" and the lower 4 are the 7-seg
+        //do this when counttimer is all 1s, say
+        if(&counttimer) begin
+            count <= count + 1;
+        end
+        counttimer <= counttimer + 1;
     end
+
 
 endmodule

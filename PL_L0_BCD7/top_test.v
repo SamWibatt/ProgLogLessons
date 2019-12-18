@@ -23,7 +23,7 @@ module top_test();
     `ifdef TEST
     parameter cbits = 4;
     `else
-    parameter cbits = 26;
+    parameter cbits = 22;       //originally 26 but this is better for 6 MHz
     `endif
     blinky #(.CBITS(cbits)) blinkus(.i_clk(clk),.o_led(led_b_outwire));
 

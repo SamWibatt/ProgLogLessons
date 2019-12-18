@@ -28,13 +28,14 @@ set_io -nowarn gpio_38 38
 set_io -nowarn gpio_28 28
 
 # Normal GPIO pins, right side
-set_io -nowarn gpio_12 12
-set_io -nowarn gpio_21 21
-set_io -nowarn gpio_13 13
-set_io -nowarn gpio_19 19
-set_io -nowarn gpio_18 18
-set_io -nowarn gpio_11 11
-set_io -nowarn gpio_9 9
+# for this design, they're the 7 segments of the LCD display. See top.v for diagram
+set_io segout[0] 12
+set_io segout[1] 21
+set_io segout[2] 13
+set_io segout[3] 19
+set_io segout[4] 18
+set_io segout[5] 11
+set_io segout[6] 9
 set_io -nowarn gpio_6 6
 set_io -nowarn gpio_44 44
 set_io -nowarn gpio_4 4

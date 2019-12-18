@@ -6,7 +6,7 @@ module blinky(
     output wire o_led
 );
 
-    parameter CBITS = 26;
+    parameter CBITS = 22;   //originally 26, this is more suitable for 6MHz
 
     reg	[CBITS-1:0]	counter = 0;
     always @(posedge i_clk)
