@@ -35,6 +35,14 @@ module top_test();
         .seg(segout)
     );
 
+    //try the version with only case/if
+    wire[6:0] segout_if;
+    PL_L0_BCD7_if bcd27seg_if(
+        .val(count[3:0]),
+        .dec(count[4]),
+        .seg(segout_if)
+    );
+
 
     always @(posedge clk) begin
         //this should drive the blinkingness

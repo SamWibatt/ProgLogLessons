@@ -55,6 +55,7 @@ module top(
     //let us have it blink on the blue upduino LED.
     blinky blinkus(.i_clk(clk),.o_led(led_b_outwire));
 
+    //pure-comblogic version: Info: Max frequency for clock 'clk': 68.96 MHz (PASS at 12.00 MHz)
     reg[4:0] count = 0;         //input value to bcd, s.t. count[4] is dec bit, count[3:0] the 4-bit input
     wire[6:0] segraw;           //output from bcd to 7-segment module
     PL_L0_BCD7 bcd27seg(
@@ -62,6 +63,16 @@ module top(
         .dec(count[4]),
         .seg(segraw)            // segraw is active high, which you may not want
     );
+
+    /*
+    //try the version with only case/if - hm Info: Max frequency for clock 'clk': 61.20 MHz (PASS at 12.00 MHz)
+    //wire[6:0] segout_if;
+    PL_L0_BCD7_if bcd27seg_if(
+        .val(count[3:0]),
+        .dec(count[4]),
+        .seg(segraw)
+    );
+    */
 
     //here converting to what we want for output from segraw. Active low means they need inverting.
     //active high, you could probably comment this and segraw declaration out and use segout in the .seg() line
@@ -73,6 +84,8 @@ module top(
     assign segout[4] = ~segraw[4];
     assign segout[5] = ~segraw[5];
     assign segout[6] = ~segraw[6];
+
+
 
     parameter PWMbits = 3;              // for dimming have LED on only 1/2^PWMbits of the time
     reg[PWMbits-1:0] pwmctr = 0;
