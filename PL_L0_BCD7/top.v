@@ -89,7 +89,7 @@ module top(
 
     parameter PWMbits = 3;              // for dimming have LED on only 1/2^PWMbits of the time
     reg[PWMbits-1:0] pwmctr = 0;
-    parameter countbits = 23;
+    parameter countbits = 22;           //23 too slow
     reg[countbits-1:0] counttimer;      // for timing the advance of the display
     always @(posedge clk) begin
         //this should drive the blinkingness
