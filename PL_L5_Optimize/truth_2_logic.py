@@ -20,6 +20,50 @@ import sys
 import re
 from quine_mccluskey import qm
 
+def extrapolate_input(instr):
+    """
+    Input: string
+    Output: list of strings
+    Given a binary input string with don'tcares, returns all the binary strings covered.
+    Don'tcare can be represented by x, X, or -.
+    Example:
+    0110 has no don'tcares, returns only ["0110"]
+    0x10 has one don'tcare, returns ["0010", "0110"]
+    0x1x has two, returns ["0010", "0011", "0110", "0111"]
+    etc.
+    """
+    outstrs = []
+
+    # check for legality
+    if re.fullmatch("[01xX-]+", instr) is None:
+        print("Illegal string {} given to extrapolate_input: should contain only 0, 1, X, x, -")
+        return []
+
+    # k so count how many dontcares there are in the string
+    # easiest if we normalize all dcs to X
+    instr_norm = instr.replace("-", "X").upper()
+    num_dc = instr_norm.count('X')
+    #print("Number of dontcares in {} is {}".format(instr_norm, num_dc))
+    if num_dc == 0:
+        return [instr_norm]
+
+    # at least one dc!
+    # first, create a format string with %s in the place of the Xs
+    instr_format = instr_norm.replace("X", "%s")
+    #print("instr_format is {}".format(instr_format))
+    # format for the binary strings we distribute into the output string
+    formstr = "{"+"0:0>{}b".format(num_dc)+"}"
+    #print("formstr = {}".format(formstr))
+    for j in range(0, 2**num_dc):
+        binstr = formstr.format(j)
+        #print("Weaving in: {}".format(binstr))
+        outy = instr_format % tuple([b for b in binstr])
+        #print(outy)
+        outstrs.append(outy)
+    return outstrs
+
+# MAIN ============================================================================================
+
 if __name__ == "__main__":
     if(len(sys.argv) == 1 or (sys.argv[1] == "-n" and len(sys.argv) == 2)):
         print("Usage: Truth2Logic [-n] <inputfile>.csv [<outputfile>]")
@@ -60,6 +104,8 @@ if __name__ == "__main__":
     inputwidths = []
     outputcols = []
     outputwidths = []
+    total_input_bits = 0
+    total_output_bits = 0
     outindex = -1
     # invals and outvals are dict from column name to a list of the values for that column, in
     #order read from the file.
@@ -74,7 +120,7 @@ if __name__ == "__main__":
             row = [col.strip('"') for col in quotedrow]  # remove quotes csv export may have added
             if line_count == 0:
                 colnames = row
-                print('Column names are {"|".join(colnames)}')
+                print('Column names are {}'.format("|".join(colnames)))
                 # here, note which are inputs and outputs.
                 # require that there be a column called OUT in all caps somewhere
                 if "OUT" not in colnames:
@@ -91,22 +137,24 @@ if __name__ == "__main__":
                     invals = {c:[] for c in inputcols}
                     outvals = {c:[] for c in outputcols}
             else:
-                print("|".join(row))                                # verbose debug
+                #print("|".join(row))                                # verbose debug
                 # sanity check
                 if len(row) != len(colnames):
                     print("wrong number of columns ({}) in line {}, should be {}"\
                         .format(len(row), line_count+1, len(colnames)))
                     sys.exit(1)
                 # if it's the first line of data we read, it defines the bit-widths of the columns.
-                # WHAT DO I DO WITH THEM?!?!??!?!?!?
                 if line_count == 1:
                     inputwidths = [len(row[i]) for i in range(0, outindex)]
+                    total_input_bits = sum(inputwidths)
                     outputwidths = [len(row[i]) for i in range(outindex+1, len(colnames))]
+                    total_output_bits = sum(outputwidths)
                     for i in range(0, outindex):
-                        print("input column {} has width {}".format(i, inputwidths[i]))
+                        print("input column {} has width {}".format(colnames[i], inputwidths[i]))
                     for i in range(outindex+1, len(colnames)):
                         print("output column {} has width {}"\
-                            .format(i-(outindex+1), outputwidths[i-(outindex+1)]))
+                            .format(colnames[i-(outindex+1)], outputwidths[i-(outindex+1)]))
+
                 # check bit widths against those recorded and make sure it's all binary
                 # TODO: make a function that does this and clean this up?
                 for i in range(0, outindex):
@@ -143,48 +191,71 @@ if __name__ == "__main__":
             line_count += 1
         print('Processed {} lines.'.format(line_count))
 
-        # now we have nice sanity checked lines.
-        # let's construct the raw inputs and outputs therefrom!
-        # Well, let's actually think out what's going to happen.
-        # - so, we need a way to turn a binary string into a Verilog equation.
-        #   binary string should also support having - in it, like output of the qm simplify does.
-        # - Need a function to relate a bit from binary string w/var name and index it represents,
-        #   e.g. if we have an input called A that's 3 bits wide, the MSB is a[2], LSB is a[0].
-        # - if the bit is a 0, emit e.g. ~a[2], if a 1 emit e.g. a[2].
-        # - If it's a - or x or X,
-        #   - THINK ABOUT THIS. What if we had an input of 1x1x meaning a certain output bit is 1?
-        #     that would mean that there are 4 inputs that lead to a 1: 1010, 1011, 1110, 1111
-        # - so generate all the numbers (i.e. decimal version of the concatenated inputs with
-        #   don'tcares subbed in all possible ways) for every input that's 1 or dc in the output bit
-        #   of interest
-        # - then make sure each list is all unique values, conceivable there would be overlap in the
-        #   extrapolated don'tcares
-        #   - let's say it's an error if any input values collide - maybe only if output differs,
-        #     in which case warn, but still
-        #   - MAKE SURE ALL INPUT VALUES ARE COVERED? yeah do
-        # - for non-simplified output (testing to see if toolchain optimizing does a better job than
-        #   this script), don't call Quine-McCluskey
-        # TODO WRAP THIS UP AND WRITE IT
+    # now we have nice sanity checked lines.
+    # let's construct the raw inputs and outputs therefrom!
+    # Well, let's actually think out what's going to happen.
+    # - so, we need a way to turn a binary string into a Verilog equation.
+    #   binary string should also support having - in it, like output of the qm simplify does.
+    # - Need a function to relate a bit from binary string w/var name and index it represents,
+    #   e.g. if we have an input called A that's 3 bits wide, the MSB is a[2], LSB is a[0].
+    # - if the bit is a 0, emit e.g. ~a[2], if a 1 emit e.g. a[2].
+    # - If it's a - or x or X,
+    #   - THINK ABOUT THIS. What if we had an input of 1x1x meaning a certain output bit is 1?
+    #     that would mean that there are 4 inputs that lead to a 1: 1010, 1011, 1110, 1111
+    # - so generate all the numbers (i.e. decimal version of the concatenated inputs with
+    #   don'tcares subbed in all possible ways) for every input that's 1 or dc in the output bit
+    #   of interest
+    # - then make sure each list is all unique values, conceivable there would be overlap in the
+    #   extrapolated don'tcares
+    #   - let's say it's an error if any input values collide - maybe only if output differs,
+    #     in which case warn, but still
+    #   - MAKE SURE ALL INPUT VALUES ARE COVERED? yeah do
 
-        # so: step through all the lines and construct the full input and output vectors.
-        numcases = line_count-1        # because the first line is column names.
+    # so: step through all the lines and construct the full input and output vectors.
+    numcases = line_count-1        # because the first line is column names.
 
-        extrapolated_rows = {}
-        extrapolated_inputs = []
-        for c in range(0, numcases):
-            inputs = []                 # extrapolated inputs for this row
-            concat_ins = ""
-            for i in range(0, len(inputcols)):
-                # concatenate the values from the input for this row to get the whole input
-                # extrapolate don't cares in the input and add all new cases to extrapolated_rows
-                # IF THE INPUT VALUE ALREADY EXISTS, YELL
-                # preserve order in extrapolated_inputs - can check full coverage by whether its
-                # length is 2^number of input bits
-                concat_ins += invals[inputcols[i]][c]
-            inputs.append(concat_ins)           # this will hold all extrapolated TODO
-            concat_outs = ""
-            for i in range(0, len(outputcols)):
-                # same for output wrt concatenating, but don't worry about extrapolating
-                concat_outs += outvals[outputcols[i]][c]
-            for inp in inputs:
-                print("Row {}: input {} output {}".format(c, inp, concat_outs))
+    extrapolated_rows = {}
+    for c in range(0, numcases):
+        # first, figure out output string
+        concat_outs = ""
+        for i in range(0, len(outputcols)):
+            # same for output wrt concatenating, but don't worry about extrapolating
+            concat_outs += outvals[outputcols[i]][c]
+        # then build extrapolated rows for which that is the output
+        concat_ins = ""
+        for i in range(0, len(inputcols)):
+            # concatenate the values from the input for this row to get the whole input
+            # extrapolate don't cares in the input and add all new cases to extrapolated_rows
+            # IF THE INPUT VALUE ALREADY EXISTS, YELL
+            # preserve order in extrapolated_inputs - can check full coverage by whether its
+            # length is 2^number of input bits
+            concat_ins += invals[inputcols[i]][c]
+        #inputs.extend(extrapolate_input(concat_ins))   easy way to extend, but we need
+        # to check for duplicates.
+        extrap_errors = False
+        extrap_input = extrapolate_input(concat_ins)
+        for newin in extrap_input:
+            if newin in extrapolated_rows:
+                print("ERROR: input {} occurs more than once".format(newin))
+                extrap_errors = True
+            else:
+                print("Row {}: input {} output {}".format(c, newin, concat_outs))
+                extrapolated_rows[newin] = concat_outs
+        if extrap_errors:
+            print("ERROR: duplicated row(s)")
+            sys.exit(1)
+
+    # check that all cases are covered - if more than all of them are covered, we would
+    # have gotten a duplicated row error
+    if len(extrapolated_rows) < 2**total_input_bits:
+        print("ERROR: some input values unaccounted for")
+        # report *which* inputs are missing
+        formstr = "{"+"0:0>{}b".format(total_input_bits)+"}"
+        for n in range(2**total_input_bits):
+            if formstr.format(n) not in extrapolated_rows:
+                print("Input {} not represented".format(formstr.format(n)))
+        sys.exit(1)
+
+    # now to build the logic!
+    # - for non-simplified output (testing to see if toolchain optimizing does a better job than
+    #   this script), don't call Quine-McCluskey
