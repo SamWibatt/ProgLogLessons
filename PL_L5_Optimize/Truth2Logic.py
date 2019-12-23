@@ -51,7 +51,7 @@ if __name__ == "__main__":
             row = [col.strip('"') for col in quotedrow]             # get rid of quotes that csv export may have added
             if line_count == 0:
                 colnames = row
-                print(f'Column names are {"|".join(colnames)}')
+                print('Column names are {"|".join(colnames)}')
                 # here, note which are inputs and outputs.
                 # require that there be a column called OUT in all caps somewhere
                 if "OUT" not in colnames:
@@ -108,7 +108,7 @@ if __name__ == "__main__":
                         else:
                             outvals[outputcols[i-(outindex+1)]].append(row[i])
             line_count += 1
-        print(f'Processed {line_count} lines.')
+        print('Processed {} lines.'.format(line_count))
 
         # now we have nice sanity checked lines.
         # let's construct the raw inputs and outputs therefrom!
@@ -128,3 +128,10 @@ if __name__ == "__main__":
         # - for non-simplified output (testing to see if toolchain optimizing does a better job than this script),
         #   don't call Quine-McCluskey
         # TODO WRAP THIS UP AND WRITE IT
+
+        # so: step through all the lines and construct the full input and output vectors.
+        numcases = line_count-1;        # because the first line is column names.
+
+        for c in range(0,numcases):
+            for i in range(0,len(inputcols)):
+                pass
