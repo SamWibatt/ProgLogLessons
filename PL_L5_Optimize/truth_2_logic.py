@@ -94,6 +94,7 @@ if __name__ == "__main__":
 
     print("Input file: {}".format(infile))
     print("Output file: {}".format(outfile))
+    print("Simplify with Quine-McCluskey: {}".format(do_simplify))
 
     # inputcols are names of columns representing inputs, in the order given. Similar outputcols.
     # understood that the index of input columns is 0..outindex-1, output columns is
@@ -156,7 +157,6 @@ if __name__ == "__main__":
                             .format(colnames[i-(outindex+1)], outputwidths[i-(outindex+1)]))
 
                 # check bit widths against those recorded and make sure it's all binary
-                # TODO: make a function that does this and clean this up?
                 for i in range(0, outindex):
                     if len(row[i]) != inputwidths[i]:
                         print("Line {} Column '{}' has incorrect width {}, should be {}"\
@@ -174,6 +174,7 @@ if __name__ == "__main__":
                         sys.exit(1)
                     else:
                         invals[inputcols[i]].append(row[i])
+
                 for i in range(outindex+1, len(colnames)):
                     if len(row[i]) != outputwidths[i-(outindex+1)]:
                         print("Line {} Column '{}' has incorrect width {}, should be {}"\
@@ -214,22 +215,23 @@ if __name__ == "__main__":
     # so: step through all the lines and construct the full input and output vectors.
     numcases = line_count-1        # because the first line is column names.
 
+    print("Extrapolated rows:")
     extrapolated_rows = {}
     for c in range(0, numcases):
         # first, figure out output string
         concat_outs = ""
-        for i in range(0, len(outputcols)):
+        for i, ocol in enumerate(outputcols):
             # same for output wrt concatenating, but don't worry about extrapolating
-            concat_outs += outvals[outputcols[i]][c]
+            concat_outs += outvals[ocol][c]
         # then build extrapolated rows for which that is the output
         concat_ins = ""
-        for i in range(0, len(inputcols)):
+        for i, icol in enumerate(inputcols):
             # concatenate the values from the input for this row to get the whole input
             # extrapolate don't cares in the input and add all new cases to extrapolated_rows
             # IF THE INPUT VALUE ALREADY EXISTS, YELL
             # preserve order in extrapolated_inputs - can check full coverage by whether its
             # length is 2^number of input bits
-            concat_ins += invals[inputcols[i]][c]
+            concat_ins += invals[icol][c]
         #inputs.extend(extrapolate_input(concat_ins))   easy way to extend, but we need
         # to check for duplicates.
         extrap_errors = False
@@ -247,15 +249,64 @@ if __name__ == "__main__":
 
     # check that all cases are covered - if more than all of them are covered, we would
     # have gotten a duplicated row error
+    iformstr = "{"+"0:0>{}b".format(total_input_bits)+"}"
     if len(extrapolated_rows) < 2**total_input_bits:
         print("ERROR: some input values unaccounted for")
         # report *which* inputs are missing
-        formstr = "{"+"0:0>{}b".format(total_input_bits)+"}"
         for n in range(2**total_input_bits):
-            if formstr.format(n) not in extrapolated_rows:
-                print("Input {} not represented".format(formstr.format(n)))
+            if iformstr.format(n) not in extrapolated_rows:
+                print("Input {} not represented".format(iformstr.format(n)))
         sys.exit(1)
 
     # now to build the logic!
     # - for non-simplified output (testing to see if toolchain optimizing does a better job than
     #   this script), don't call Quine-McCluskey
+
+    # so, we need to iterate over the bits of output. I guess let's build lists of the input and
+    # output bit names.
+    input_bit_names = []
+    output_bit_names = []
+
+    # if a field's width is 1 bit, just emit its name. Otherwise emit name and [bit] in
+    # descending order.
+    for i, icol in enumerate(inputcols):
+        if inputwidths[i] == 1:
+            input_bit_names.append(icol)
+        else:
+            for q in range(inputwidths[i]-1, -1, -1):
+                input_bit_names.append("{}[{}]".format(icol, q))
+
+    for i, ocol in enumerate(outputcols):
+        if outputwidths[i] == 1:
+            output_bit_names.append(ocol)
+        else:
+            for q in range(outputwidths[i]-1, -1, -1):
+                output_bit_names.append("{}[{}]".format(ocol, q))
+
+    print("Input bit names: {}".format("|".join(input_bit_names)))
+    print("Output bit names: {}".format("|".join(output_bit_names)))
+
+    # now to start building the actual logic! w00tles!
+    if do_simplify is False:
+        # non-simplified version:
+        # for each output bit:
+        #   for each input:
+        #     if the output bit is a 1 for this input, add the input string to the ones array
+        #     if the output bit is a X, die? What is the correct thing to do? Could just ignore
+        #       the input for that row, I guess, which makes it a 0? ??? Let's say die.
+        # result is a ones array of binary strings e.g. ["010", "101"] where the inputs are
+        # A and B[1:0] so the logic for that bit is
+        # out[bit] = (~A & B[1] & ~B[0]) + (A & ~B[1] & B[0])
+        # that part gets done below bc simplified version uses the same output format
+        # (though it also allows for don't-cares)
+        # this is a slow gross way to do it but
+        for o, obit_name in enumerate(output_bit_names):
+            ones_inputstrs = []
+            for rownum in range(2**total_input_bits):
+                inny = iformstr.format(rownum)
+                outstr = extrapolated_rows[inny]
+                if outstr[o] == '1':
+                    ones_inputstrs.append(inny)
+            print("Inputs where output bit {} is 1: {}".format(obit_name, "|".join(ones_inputstrs)))
+    else:
+        pass
