@@ -297,9 +297,7 @@ if __name__ == "__main__":
         # result is a ones array of binary strings e.g. ["010", "101"] where the inputs are
         # A and B[1:0] so the logic for that bit is
         # out[bit] = (~A & B[1] & ~B[0]) + (A & ~B[1] & B[0])
-        # that part gets done below bc simplified version uses the same output format
-        # (though it also allows for don't-cares)
-        # this is a slow gross way to do it but
+        # this is a slow gross way to do it but wev
         for o, obit_name in enumerate(output_bit_names):
             ones_inputstrs = []
             for rownum in range(2**total_input_bits):
@@ -307,6 +305,50 @@ if __name__ == "__main__":
                 outstr = extrapolated_rows[inny]
                 if outstr[o] == '1':
                     ones_inputstrs.append(inny)
+                elif outstr[o] == 'x' or outstr[o] == 'X' or outstr[o] == '-':
+                    print("ERROR: non-simplified mode shouldn't be used if outputs have dontcares")
+                    sys.exit(1)
             print("Inputs where output bit {} is 1: {}".format(obit_name, "|".join(ones_inputstrs)))
+            # THAT SHOULD BE ALL WE NEED TO DO THE CONVERSION
+            # TODO: HERE PUT THE PART THAT EMITS THE LOGIC FOR THAT OUTPUT BIT!
     else:
-        pass
+        # for quine_mccluskey version, need to build the form it wants - which can be strings
+        # in simplify_los:
+        # def simplify_los(self, ones, dc = [], num_bits = None):
+        #     """The simplification algorithm for a list of string-encoded inputs.
+        #     Args:
+        #         ones (list of str): list of strings that describe when the output
+        #         function is '1', e.g. ['0001', '0010', '0110', '1000', '1111'].
+        #     Kwargs:
+        #         dc: (list of str): list of strings that define the don't care
+        #         combinations.
+        #
+        # recall that invocation is something like this
+        # >>> from quine_mccluskey import qm
+        # >>> myqm = qm.QuineMcCluskey(False)
+        # >>> myqm.simplify([0,2,3,5,6,8,9,11,12,13,14,16,18,19,21,22,24,25],num_bits=5)
+        # {'-00-0', '-0101', '-001-', '010-1', '01-0-', '-0-10', '0-110', '-100-'}
+        myqm = qm.QuineMcCluskey(False)
+        for o, obit_name in enumerate(output_bit_names):
+            ones_inputstrs = []
+            dc_inputstrs = []
+            for rownum in range(2**total_input_bits):
+                inny = iformstr.format(rownum)
+                outstr = extrapolated_rows[inny]
+                if outstr[o] == '1':
+                    ones_inputstrs.append(inny)
+                elif outstr[o] == 'x' or outstr[o] == 'X' or outstr[o] == '-':
+                    dc_inputstrs.append(inny)
+            print("Inputs where output bit {} is 1: {}".format(obit_name, "|".join(ones_inputstrs)))
+            # TODO: make an input file with some X in the output
+            if len(dc_inputstrs) > 0:
+                print("Inputs where output bit {} is X: {}".format(obit_name, "|".join(dc_inputstrs)))
+            # THAT SHOULD BE ALL WE NEED TO DO THE CONVERSION
+            # call quine_mccluskey thing to simplify!
+            sim = myqm.simplify_los(ones_inputstrs, dc=dc_inputstrs, num_bits=total_input_bits)
+            print("Result from myqm: {}".format("|".join(sim)))
+            # TODO: HERE PUT THE PART THAT EMITS THE LOGIC FOR THAT OUTPUT BIT!
+
+def emit_logic(obit_name, input_bit_names, inputs):
+    # TODO WRITE THIS!!!!!!!!!!!!!!!!!!!11
+    pass
