@@ -107,40 +107,39 @@ if __name__ == "__main__":
                     for i in range(outindex+1, len(colnames)):
                         print("output column {} has width {}"\
                             .format(i-(outindex+1), outputwidths[i-(outindex+1)]))
-                else:
-                    # check bit widths against those recorded and make sure it's all binary
-                    # TODO: make a function that does this and clean this up?
-                    for i in range(0, outindex):
-                        if len(row[i]) != inputwidths[i]:
-                            print("Line {} Column '{}' has incorrect width {}, should be {}"\
-                                .format(line_count+1, colnames[i], len(row[i]), inputwidths[i]))
-                            sys.exit(1)
-                        #HERE CHECK TO SEE THAT THE STRING IS ALL 0,1... looks like "don't care" in
-                        # the quine-mcc implementation means that the OUTPUT doesn't matter.
-                        # only wait, see below where I ponder that don't-cares on the input are
-                        # handled as preprocessing of input
-                        # to the qmc simplification, so they're ok in input too.
-                        elif re.fullmatch("[01xX-]+", row[i]) is None:
-                            print("Line {} Column '{}'".format(line_count+1, colnames[i]),
-                                  "contains illegal characters (should be all ",
-                                  "0s, 1s, -s and Xs, is \"{}\")".format(row[i]))
-                            sys.exit(1)
-                        else:
-                            invals[inputcols[i]].append(row[i])
-                    for i in range(outindex+1, len(colnames)):
-                        if len(row[i]) != outputwidths[i-(outindex+1)]:
-                            print("Line {} Column '{}' has incorrect width {}, should be {}"\
-                                .format(line_count+1, colnames[i], len(row[i]),
-                                        outputwidths[i-(outindex+1)]))
-                            sys.exit(1)
-                        # OUTPUTS CAN HAVE Xs/-s that will be passed to qm's "don't cares" list
-                        elif re.fullmatch("[01xX-]+", row[i]) is None:
-                            print("Line {} Column '{}'".format(line_count+1, colnames[i]),
-                                  "contains illegal characters (should be all ",
-                                  "0s, 1s, -s and Xs, is \"{}\")".format(row[i]))
-                            sys.exit(1)
-                        else:
-                            outvals[outputcols[i-(outindex+1)]].append(row[i])
+                # check bit widths against those recorded and make sure it's all binary
+                # TODO: make a function that does this and clean this up?
+                for i in range(0, outindex):
+                    if len(row[i]) != inputwidths[i]:
+                        print("Line {} Column '{}' has incorrect width {}, should be {}"\
+                            .format(line_count+1, colnames[i], len(row[i]), inputwidths[i]))
+                        sys.exit(1)
+                    #HERE CHECK TO SEE THAT THE STRING IS ALL 0,1... looks like "don't care" in
+                    # the quine-mcc implementation means that the OUTPUT doesn't matter.
+                    # only wait, see below where I ponder that don't-cares on the input are
+                    # handled as preprocessing of input
+                    # to the qmc simplification, so they're ok in input too.
+                    elif re.fullmatch("[01xX-]+", row[i]) is None:
+                        print("Line {} Column '{}'".format(line_count+1, colnames[i]),
+                              "contains illegal characters (should be all ",
+                              "0s, 1s, -s and Xs, is \"{}\")".format(row[i]))
+                        sys.exit(1)
+                    else:
+                        invals[inputcols[i]].append(row[i])
+                for i in range(outindex+1, len(colnames)):
+                    if len(row[i]) != outputwidths[i-(outindex+1)]:
+                        print("Line {} Column '{}' has incorrect width {}, should be {}"\
+                            .format(line_count+1, colnames[i], len(row[i]),
+                                    outputwidths[i-(outindex+1)]))
+                        sys.exit(1)
+                    # OUTPUTS CAN HAVE Xs/-s that will be passed to qm's "don't cares" list
+                    elif re.fullmatch("[01xX-]+", row[i]) is None:
+                        print("Line {} Column '{}'".format(line_count+1, colnames[i]),
+                              "contains illegal characters (should be all ",
+                              "0s, 1s, -s and Xs, is \"{}\")".format(row[i]))
+                        sys.exit(1)
+                    else:
+                        outvals[outputcols[i-(outindex+1)]].append(row[i])
             line_count += 1
         print('Processed {} lines.'.format(line_count))
 
@@ -173,11 +172,19 @@ if __name__ == "__main__":
         extrapolated_rows = {}
         extrapolated_inputs = []
         for c in range(0, numcases):
+            inputs = []                 # extrapolated inputs for this row
+            concat_ins = ""
             for i in range(0, len(inputcols)):
                 # concatenate the values from the input for this row to get the whole input
-                # same for output
                 # extrapolate don't cares in the input and add all new cases to extrapolated_rows
                 # IF THE INPUT VALUE ALREADY EXISTS, YELL
                 # preserve order in extrapolated_inputs - can check full coverage by whether its
                 # length is 2^number of input bits
-                pass
+                concat_ins += invals[inputcols[i]][c]
+            inputs.append(concat_ins)           # this will hold all extrapolated TODO
+            concat_outs = ""
+            for i in range(0, len(outputcols)):
+                # same for output wrt concatenating, but don't worry about extrapolating
+                concat_outs += outvals[outputcols[i]][c]
+            for inp in inputs:
+                print("Row {}: input {} output {}".format(c, inp, concat_outs))
