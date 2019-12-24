@@ -91,6 +91,7 @@ module PL_L0_BCD7(
     //Here is the combinatorial logic for the BCD to 7 seg converter.
     //should trigger whenever the value or dec flag changes.
     always @(val, dec) begin
+        /* orig
         seg[0] = (~dec & ~val[1] & ~val[0]) | (~val[3] & ~val[1] & ~val[0]) | (~val[3] & val[2] & ~val[1]) | (~val[3] & val[2] & ~val[0]) | (val[3] & ~val[2] & ~val[1]) | (~dec & val[3] & val[1]);
         seg[1] = (~val[3] & val[1]) | (~val[3] & ~val[2] & ~val[0]) | (~val[3] & val[2] & val[0]) | (~dec & val[2] & val[1]) | (val[3] & ~val[2] & ~val[1]) | (~dec & val[3] & ~val[0]);
         seg[2] = (~val[3] & ~val[2]) | (~val[2] & ~val[1]) | (~dec & ~val[2] & ~val[0]) | (~val[3] & ~val[1] & ~val[0]) | (~val[3] & val[1] & val[0]) | (~dec & val[3] & ~val[1] & val[0]);
@@ -109,5 +110,14 @@ module PL_L0_BCD7(
             (~dec & val[3] & ~val[2] & val[0]) |
             (~val[3] & val[2] & ~val[1] & val[0]) |
             (~dec & val[2] & val[1] & ~val[0]);
+        */
+        //values from truth_2_logic - worky!
+        seg[6] = (~dec & val[3] & ~val[1]) | (~dec & ~val[2] & val[1] & val[0]) | (val[3] & ~val[2] & ~val[1]) | (~val[3] & val[2] & ~val[1] & val[0]) | (~val[3] & ~val[2] & val[1]) | (~val[3] & val[1] & ~val[0]) | (~val[2] & ~val[1] & ~val[0]) | (~dec & val[3] & val[2] & ~val[0]);
+        seg[5] = (~val[3] & val[0]) | (~val[3] & val[2]) | (~dec & ~val[1] & val[0]) | (~val[2] & ~val[1]) | (~dec & val[3] & ~val[2]);
+        seg[4] = (val[3] & val[1]) | (dec & val[3]) | (val[2] & ~val[1] & val[0]) | (~val[2] & val[1]) | (val[3] & ~val[2]) | (~val[3] & val[2] & ~val[0]);
+        seg[3] = (~val[3] & val[1] & ~val[0]) | (~val[2] & ~val[1] & ~val[0]) | (~dec & val[3] & val[1]) | (~dec & val[3] & val[2]);
+        seg[2] = (~dec & ~val[2] & ~val[0]) | (~val[3] & ~val[2]) | (~val[3] & val[1] & val[0]) | (~dec & val[3] & ~val[1] & val[0]) | (~val[2] & ~val[1]) | (~val[3] & ~val[1] & ~val[0]);
+        seg[1] = (val[3] & ~val[2] & ~val[1]) | (~val[2] & ~val[1] & ~val[0]) | (~val[3] & val[1]) | (~val[3] & val[2] & val[0]) | (~dec & val[2] & val[1]) | (~dec & val[3] & ~val[0]);
+        seg[0] = (~dec & val[3] & val[1]) | (val[3] & ~val[2] & ~val[1]) | (~dec & val[2] & ~val[0]) | (~val[2] & ~val[1] & ~val[0]) | (~val[3] & val[2] & ~val[1]) | (~val[3] & val[2] & ~val[0]);
     end
 endmodule

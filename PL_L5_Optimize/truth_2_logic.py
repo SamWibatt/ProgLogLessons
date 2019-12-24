@@ -3,6 +3,8 @@
 # pylint3 --rcfile=pylint3rc truth_2_logic.py
 # setting pylint3rc to have "constants" be ok with lowercase
 # because I don't like having all variables at global scope be considered constants.
+# ran this for bcd27seg test:
+# python3 truth_2_logic.py data/BCD7Orig-withInputDontCares.csv > data/BCD7Orig-withInputDontCares.v
 
 """
 truth_2_logic
@@ -15,10 +17,20 @@ input and output column values must all be the same number of characters per col
 e.g. if column A is 6 bits wide, all values in that column must be 6 bits wide.
 Bits for either input or output may be 0, 1, or don't-care, which is represented by x, X, or -.
 """
+from __future__ import print_function
 import csv
 import sys
 import re
 from quine_mccluskey import qm
+
+# stderr print function from
+# https://stackoverflow.com/questions/5574702/how-to-print-to-stderr-in-python
+def eprint(*args, **kwargs):
+    """
+    stderr print function from
+    https://stackoverflow.com/questions/5574702/how-to-print-to-stderr-in-python
+    """
+    print(*args, file=sys.stderr, **kwargs)
 
 def extrapolate_input(instr):
     """
@@ -36,47 +48,73 @@ def extrapolate_input(instr):
 
     # check for legality
     if re.fullmatch("[01xX-]+", instr) is None:
-        print("Illegal string {} given to extrapolate_input: should contain only 0, 1, X, x, -")
+        eprint("Illegal string {} given to extrapolate_input: should contain only 0, 1, X, x, -")
         return []
 
     # k so count how many dontcares there are in the string
     # easiest if we normalize all dcs to X
     instr_norm = instr.replace("-", "X").upper()
     num_dc = instr_norm.count('X')
-    #print("Number of dontcares in {} is {}".format(instr_norm, num_dc))
+    #eprint("Number of dontcares in {} is {}".format(instr_norm, num_dc))
     if num_dc == 0:
         return [instr_norm]
 
     # at least one dc!
     # first, create a format string with %s in the place of the Xs
     instr_format = instr_norm.replace("X", "%s")
-    #print("instr_format is {}".format(instr_format))
+    #eprint("instr_format is {}".format(instr_format))
     # format for the binary strings we distribute into the output string
     formstr = "{"+"0:0>{}b".format(num_dc)+"}"
-    #print("formstr = {}".format(formstr))
+    #eprint("formstr = {}".format(formstr))
     for j in range(0, 2**num_dc):
         binstr = formstr.format(j)
-        #print("Weaving in: {}".format(binstr))
+        #eprint("Weaving in: {}".format(binstr))
         outy = instr_format % tuple([b for b in binstr])
-        #print(outy)
+        #eprint(outy)
         outstrs.append(outy)
     return outstrs
+
+def emit_logic(outbit_name, inbit_names, inputs):
+    """
+    Given an output bit's variable name, a list of names of the input bits, and a list of inputs:
+    each of "inputs" is a string containing 1, 0, and -
+    characters are in the same order as input_bit_names
+    for each input
+      for each character of input:
+        if 0, add "~" + input bit name to list
+        if 1, add input bit name to list
+        otherwise do not emit anything
+      construct "(" & " | ".join(list) + ")" and add that to outer list
+    after all of that, emit
+    outbit_name = " + ".join(outer list)
+    return that as a string
+    """
+    input_term_list = []
+    for inpy in inputs:
+        input_bit_list = []
+        for bnum, bit in enumerate(inpy):
+            if bit == '0':
+                input_bit_list.append("~" + inbit_names[bnum])
+            elif bit == '1':
+                input_bit_list.append(inbit_names[bnum])
+        input_term_list.append("(" + " & ".join(input_bit_list) + ")")
+    return outbit_name + " = " + " | ".join(input_term_list) + ";"
 
 # MAIN ============================================================================================
 
 if __name__ == "__main__":
     if(len(sys.argv) == 1 or (sys.argv[1] == "-n" and len(sys.argv) == 2)):
-        print("Usage: Truth2Logic [-n] <inputfile>.csv [<outputfile>]")
-        print("Takes a CSV file representing a truth table from multiple inputs",
-              "to multiple outputs")
-        print("Emits verilog code to enact that logic")
-        print("-n means don't simplify output. By default, output logic simplified with ",
-              "Quine-McCluskey algorithm")
-        print("input and output column values must all be the same number of characters ",
-              "per column, e.g. if column A")
-        print("is 6 bits wide, all values in that column must be 6 bits wide.")
-        print("Bits for either input or output may be 0, 1, or don't-care, which is represented ",
-              "by x, X, or -.")
+        eprint("Usage: Truth2Logic [-n] <inputfile>.csv [<outputfile>]")
+        eprint("Takes a CSV file representing a truth table from multiple inputs",
+               "to multiple outputs")
+        eprint("Emits verilog code to enact that logic")
+        eprint("-n means don't simplify output. By default, output logic simplified with ",
+               "Quine-McCluskey algorithm")
+        eprint("input and output column values must all be the same number of characters ",
+               "per column, e.g. if column A")
+        eprint("is 6 bits wide, all values in that column must be 6 bits wide.")
+        eprint("Bits for either input or output may be 0, 1, or don't-care, which is represented ",
+               "by x, X, or -.")
         sys.exit(1)
 
     # Set up globals!
@@ -92,9 +130,9 @@ if __name__ == "__main__":
         if len(sys.argv) > 2:
             outfile = sys.argv[2]
 
-    print("Input file: {}".format(infile))
-    print("Output file: {}".format(outfile))
-    print("Simplify with Quine-McCluskey: {}".format(do_simplify))
+    eprint("Input file: {}".format(infile))
+    eprint("Output file: {}".format(outfile))
+    eprint("Simplify with Quine-McCluskey: {}".format(do_simplify))
 
     # inputcols are names of columns representing inputs, in the order given. Similar outputcols.
     # understood that the index of input columns is 0..outindex-1, output columns is
@@ -121,27 +159,27 @@ if __name__ == "__main__":
             row = [col.strip('"') for col in quotedrow]  # remove quotes csv export may have added
             if line_count == 0:
                 colnames = row
-                print('Column names are {}'.format("|".join(colnames)))
+                eprint('Column names are {}'.format("|".join(colnames)))
                 # here, note which are inputs and outputs.
                 # require that there be a column called OUT in all caps somewhere
                 if "OUT" not in colnames:
-                    print("ERROR: there needs to be a column named OUT between inputs and outputs")
+                    eprint("ERROR: there needs to be a column named OUT between inputs and outputs")
                     sys.exit(1)
                 else:
                     # we have OUT; anything before it is an input, anything after is an output.
                     outindex = colnames.index("OUT")             # we know it's there
                     inputcols = colnames[:outindex]
                     outputcols = colnames[outindex+1:]
-                    print("Outindex: {} Inputs: {} outputs: {}"\
+                    eprint("Outindex: {} Inputs: {} outputs: {}"\
                         .format(outindex, "|".join(inputcols), "|".join(outputcols)))
                     # initialize values lists
                     invals = {c:[] for c in inputcols}
                     outvals = {c:[] for c in outputcols}
             else:
-                #print("|".join(row))                                # verbose debug
+                #eprint("|".join(row))                                # verbose debug
                 # sanity check
                 if len(row) != len(colnames):
-                    print("wrong number of columns ({}) in line {}, should be {}"\
+                    eprint("wrong number of columns ({}) in line {}, should be {}"\
                         .format(len(row), line_count+1, len(colnames)))
                     sys.exit(1)
                 # if it's the first line of data we read, it defines the bit-widths of the columns.
@@ -151,15 +189,15 @@ if __name__ == "__main__":
                     outputwidths = [len(row[i]) for i in range(outindex+1, len(colnames))]
                     total_output_bits = sum(outputwidths)
                     for i in range(0, outindex):
-                        print("input column {} has width {}".format(colnames[i], inputwidths[i]))
+                        eprint("input column {} has width {}".format(colnames[i], inputwidths[i]))
                     for i in range(outindex+1, len(colnames)):
-                        print("output column {} has width {}"\
+                        eprint("output column {} has width {}"\
                             .format(colnames[i-(outindex+1)], outputwidths[i-(outindex+1)]))
 
                 # check bit widths against those recorded and make sure it's all binary
                 for i in range(0, outindex):
                     if len(row[i]) != inputwidths[i]:
-                        print("Line {} Column '{}' has incorrect width {}, should be {}"\
+                        eprint("Line {} Column '{}' has incorrect width {}, should be {}"\
                             .format(line_count+1, colnames[i], len(row[i]), inputwidths[i]))
                         sys.exit(1)
                     #HERE CHECK TO SEE THAT THE STRING IS ALL 0,1... looks like "don't care" in
@@ -168,29 +206,29 @@ if __name__ == "__main__":
                     # handled as preprocessing of input
                     # to the qmc simplification, so they're ok in input too.
                     elif re.fullmatch("[01xX-]+", row[i]) is None:
-                        print("Line {} Column '{}'".format(line_count+1, colnames[i]),
-                              "contains illegal characters (should be all ",
-                              "0s, 1s, -s and Xs, is \"{}\")".format(row[i]))
+                        eprint("Line {} Column '{}'".format(line_count+1, colnames[i]),
+                               "contains illegal characters (should be all ",
+                               "0s, 1s, -s and Xs, is \"{}\")".format(row[i]))
                         sys.exit(1)
                     else:
                         invals[inputcols[i]].append(row[i])
 
                 for i in range(outindex+1, len(colnames)):
                     if len(row[i]) != outputwidths[i-(outindex+1)]:
-                        print("Line {} Column '{}' has incorrect width {}, should be {}"\
+                        eprint("Line {} Column '{}' has incorrect width {}, should be {}"\
                             .format(line_count+1, colnames[i], len(row[i]),
                                     outputwidths[i-(outindex+1)]))
                         sys.exit(1)
                     # OUTPUTS CAN HAVE Xs/-s that will be passed to qm's "don't cares" list
                     elif re.fullmatch("[01xX-]+", row[i]) is None:
-                        print("Line {} Column '{}'".format(line_count+1, colnames[i]),
-                              "contains illegal characters (should be all ",
-                              "0s, 1s, -s and Xs, is \"{}\")".format(row[i]))
+                        eprint("Line {} Column '{}'".format(line_count+1, colnames[i]),
+                               "contains illegal characters (should be all ",
+                               "0s, 1s, -s and Xs, is \"{}\")".format(row[i]))
                         sys.exit(1)
                     else:
                         outvals[outputcols[i-(outindex+1)]].append(row[i])
             line_count += 1
-        print('Processed {} lines.'.format(line_count))
+        eprint('Processed {} lines.'.format(line_count))
 
     # now we have nice sanity checked lines.
     # let's construct the raw inputs and outputs therefrom!
@@ -215,7 +253,7 @@ if __name__ == "__main__":
     # so: step through all the lines and construct the full input and output vectors.
     numcases = line_count-1        # because the first line is column names.
 
-    print("Extrapolated rows:")
+    eprint("Extrapolated rows:")
     extrapolated_rows = {}
     for c in range(0, numcases):
         # first, figure out output string
@@ -238,24 +276,24 @@ if __name__ == "__main__":
         extrap_input = extrapolate_input(concat_ins)
         for newin in extrap_input:
             if newin in extrapolated_rows:
-                print("ERROR: input {} occurs more than once".format(newin))
+                eprint("ERROR: input {} occurs more than once".format(newin))
                 extrap_errors = True
             else:
-                print("Row {}: input {} output {}".format(c, newin, concat_outs))
+                eprint("Row {}: input {} output {}".format(c, newin, concat_outs))
                 extrapolated_rows[newin] = concat_outs
         if extrap_errors:
-            print("ERROR: duplicated row(s)")
+            eprint("ERROR: duplicated row(s)")
             sys.exit(1)
 
     # check that all cases are covered - if more than all of them are covered, we would
     # have gotten a duplicated row error
     iformstr = "{"+"0:0>{}b".format(total_input_bits)+"}"
     if len(extrapolated_rows) < 2**total_input_bits:
-        print("ERROR: some input values unaccounted for")
+        eprint("ERROR: some input values unaccounted for")
         # report *which* inputs are missing
         for n in range(2**total_input_bits):
             if iformstr.format(n) not in extrapolated_rows:
-                print("Input {} not represented".format(iformstr.format(n)))
+                eprint("Input {} not represented".format(iformstr.format(n)))
         sys.exit(1)
 
     # now to build the logic!
@@ -283,8 +321,8 @@ if __name__ == "__main__":
             for q in range(outputwidths[i]-1, -1, -1):
                 output_bit_names.append("{}[{}]".format(ocol, q))
 
-    print("Input bit names: {}".format("|".join(input_bit_names)))
-    print("Output bit names: {}".format("|".join(output_bit_names)))
+    eprint("Input bit names: {}".format("|".join(input_bit_names)))
+    eprint("Output bit names: {}".format("|".join(output_bit_names)))
 
     # now to start building the actual logic! w00tles!
     if do_simplify is False:
@@ -296,7 +334,7 @@ if __name__ == "__main__":
         #       the input for that row, I guess, which makes it a 0? ??? Let's say die.
         # result is a ones array of binary strings e.g. ["010", "101"] where the inputs are
         # A and B[1:0] so the logic for that bit is
-        # out[bit] = (~A & B[1] & ~B[0]) + (A & ~B[1] & B[0])
+        # out[bit] = (~A & B[1] & ~B[0]) | (A & ~B[1] & B[0])
         # this is a slow gross way to do it but wev
         for o, obit_name in enumerate(output_bit_names):
             ones_inputstrs = []
@@ -306,11 +344,12 @@ if __name__ == "__main__":
                 if outstr[o] == '1':
                     ones_inputstrs.append(inny)
                 elif outstr[o] == 'x' or outstr[o] == 'X' or outstr[o] == '-':
-                    print("ERROR: non-simplified mode shouldn't be used if outputs have dontcares")
+                    eprint("ERROR: non-simplified mode shouldn't be used if outputs have dontcares")
                     sys.exit(1)
-            print("Inputs where output bit {} is 1: {}".format(obit_name, "|".join(ones_inputstrs)))
+            eprint("Inputs with output bit {}=1: {}".format(obit_name, "|".join(ones_inputstrs)))
             # THAT SHOULD BE ALL WE NEED TO DO THE CONVERSION
-            # TODO: HERE PUT THE PART THAT EMITS THE LOGIC FOR THAT OUTPUT BIT!
+            vline = emit_logic(obit_name, input_bit_names, ones_inputstrs)
+            print(vline)
     else:
         # for quine_mccluskey version, need to build the form it wants - which can be strings
         # in simplify_los:
@@ -339,16 +378,13 @@ if __name__ == "__main__":
                     ones_inputstrs.append(inny)
                 elif outstr[o] == 'x' or outstr[o] == 'X' or outstr[o] == '-':
                     dc_inputstrs.append(inny)
-            print("Inputs where output bit {} is 1: {}".format(obit_name, "|".join(ones_inputstrs)))
+            eprint("Inputs with output bit {}=1: {}".format(obit_name, "|".join(ones_inputstrs)))
             # TODO: make an input file with some X in the output
-            if len(dc_inputstrs) > 0:
-                print("Inputs where output bit {} is X: {}".format(obit_name, "|".join(dc_inputstrs)))
+            if dc_inputstrs:
+                eprint("Inputs with output bit {}=X: {}".format(obit_name, "|".join(dc_inputstrs)))
             # THAT SHOULD BE ALL WE NEED TO DO THE CONVERSION
             # call quine_mccluskey thing to simplify!
             sim = myqm.simplify_los(ones_inputstrs, dc=dc_inputstrs, num_bits=total_input_bits)
-            print("Result from myqm: {}".format("|".join(sim)))
-            # TODO: HERE PUT THE PART THAT EMITS THE LOGIC FOR THAT OUTPUT BIT!
-
-def emit_logic(obit_name, input_bit_names, inputs):
-    # TODO WRITE THIS!!!!!!!!!!!!!!!!!!!11
-    pass
+            eprint("Result from myqm: {}".format("|".join(sim)))
+            vline = emit_logic(obit_name, input_bit_names, sim)
+            print(vline)
