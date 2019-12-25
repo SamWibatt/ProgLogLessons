@@ -1,0 +1,209 @@
+12/24/19:
+Original implementation (from truth_2_logic output for 5->7 bit truth table)
+in out:
+=== top ===
+
+   Number of wires:                 47
+   Number of wire bits:            200
+   Number of public wires:          15
+   Number of public wire bits:      72
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:                181
+     SB_CARRY                       44
+     SB_DFF                         45
+     SB_DFFE                         8
+     SB_HFOSC                        1
+     SB_LUT4                        82
+     SB_RGBA_DRV                     1
+
+In err:
+Info: Device utilisation:
+Info: 	         ICESTORM_LC:    92/ 5280     1%
+Info: 	        ICESTORM_RAM:     0/   30     0%
+Info: 	               SB_IO:     7/   96     7%
+Info: 	               SB_GB:     1/    8    12%
+Info: 	        ICESTORM_PLL:     0/    1     0%
+Info: 	         SB_WARMBOOT:     0/    1     0%
+Info: 	        ICESTORM_DSP:     0/    8     0%
+Info: 	      ICESTORM_HFOSC:     1/    1   100%
+Info: 	      ICESTORM_LFOSC:     0/    1     0%
+Info: 	              SB_I2C:     0/    2     0%
+Info: 	              SB_SPI:     0/    2     0%
+Info: 	              IO_I3C:     0/    2     0%
+Info: 	         SB_LEDDA_IP:     0/    1     0%
+Info: 	         SB_RGBA_DRV:     1/    1   100%
+Info: 	      ICESTORM_SPRAM:     0/    4     0%
+
+Info: Max frequency for clock 'clk': 62.96 MHz (PASS at 12.00 MHz)
+Info: Max delay posedge clk -> <async>: 13.78 ns
+but after routing...???
+Info: Max frequency for clock 'clk': 56.40 MHz (PASS at 12.00 MHz)
+Info: Max delay posedge clk -> <async>: 14.12 ns
+
+
+Unsimplified ======================================================================================
+
+From out:
+=== top ===
+
+   Number of wires:                 65
+   Number of wire bits:            218
+   Number of public wires:          15
+   Number of public wire bits:      72
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:                199
+     SB_CARRY                       44
+     SB_DFF                         45
+     SB_DFFE                         8
+     SB_HFOSC                        1
+     SB_LUT4                       100
+     SB_RGBA_DRV                     1
+
+From err:
+
+Info: Device utilisation:
+Info: 	         ICESTORM_LC:   110/ 5280     2%
+Info: 	        ICESTORM_RAM:     0/   30     0%
+Info: 	               SB_IO:     7/   96     7%
+Info: 	               SB_GB:     1/    8    12%
+Info: 	        ICESTORM_PLL:     0/    1     0%
+Info: 	         SB_WARMBOOT:     0/    1     0%
+Info: 	        ICESTORM_DSP:     0/    8     0%
+Info: 	      ICESTORM_HFOSC:     1/    1   100%
+Info: 	      ICESTORM_LFOSC:     0/    1     0%
+Info: 	              SB_I2C:     0/    2     0%
+Info: 	              SB_SPI:     0/    2     0%
+Info: 	              IO_I3C:     0/    2     0%
+Info: 	         SB_LEDDA_IP:     0/    1     0%
+Info: 	         SB_RGBA_DRV:     1/    1   100%
+Info: 	      ICESTORM_SPRAM:     0/    4     0%
+
+
+
+Info: Max frequency for clock 'clk': 55.11 MHz (PASS at 12.00 MHz)
+Info: Max delay posedge clk -> <async>: 16.69 ns
+after routing:
+Info: Max frequency for clock 'clk': 50.52 MHz (PASS at 12.00 MHz)
+Info: Max delay posedge clk -> <async>: 16.60 ns
+
+Hybrid version: ===================================================================================
+
+From out:
+
+=== top ===
+
+   Number of wires:                 48
+   Number of wire bits:            201
+   Number of public wires:          15
+   Number of public wire bits:      72
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:                182
+     SB_CARRY                       44
+     SB_DFF                         45
+     SB_DFFE                         8
+     SB_HFOSC                        1
+     SB_LUT4                        83
+     SB_RGBA_DRV                     1
+
+
+From err:
+
+Info: Device utilisation:
+Info: 	         ICESTORM_LC:    93/ 5280     1% <--- 1 more than original
+Info: 	        ICESTORM_RAM:     0/   30     0%
+Info: 	               SB_IO:     7/   96     7%
+Info: 	               SB_GB:     1/    8    12%
+Info: 	        ICESTORM_PLL:     0/    1     0%
+Info: 	         SB_WARMBOOT:     0/    1     0%
+Info: 	        ICESTORM_DSP:     0/    8     0%
+Info: 	      ICESTORM_HFOSC:     1/    1   100%
+Info: 	      ICESTORM_LFOSC:     0/    1     0%
+Info: 	              SB_I2C:     0/    2     0%
+Info: 	              SB_SPI:     0/    2     0%
+Info: 	              IO_I3C:     0/    2     0%
+Info: 	         SB_LEDDA_IP:     0/    1     0%
+Info: 	         SB_RGBA_DRV:     1/    1   100%
+Info: 	      ICESTORM_SPRAM:     0/    4     0%
+
+Info: Max frequency for clock 'clk': 69.21 MHz (PASS at 12.00 MHz)
+Info: Max delay posedge clk -> <async>: 13.69 ns
+after route:
+Info: Max frequency for clock 'clk': 62.92 MHz (PASS at 12.00 MHz) <---- but faster again!
+Info: Max delay posedge clk -> <async>: 13.99 ns
+
+Hybrid2 version: ==================================================================================
+
+From out:
+
+=== top ===
+
+   Number of wires:                 45 <--- fewest so far!
+   Number of wire bits:            201
+   Number of public wires:          15
+   Number of public wire bits:      72
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:                179
+     SB_CARRY                       46
+     SB_DFF                         45
+     SB_DFFE                         8
+     SB_HFOSC                        1
+     SB_LUT4                        78 <----- here too!
+     SB_RGBA_DRV                     1
+
+From err:
+
+Info: Device utilisation:
+Info: 	         ICESTORM_LC:    92/ 5280     1%
+Info: 	        ICESTORM_RAM:     0/   30     0%
+Info: 	               SB_IO:     7/   96     7%
+Info: 	               SB_GB:     1/    8    12%
+Info: 	        ICESTORM_PLL:     0/    1     0%
+Info: 	         SB_WARMBOOT:     0/    1     0%
+Info: 	        ICESTORM_DSP:     0/    8     0%
+Info: 	      ICESTORM_HFOSC:     1/    1   100%
+Info: 	      ICESTORM_LFOSC:     0/    1     0%
+Info: 	              SB_I2C:     0/    2     0%
+Info: 	              SB_SPI:     0/    2     0%
+Info: 	              IO_I3C:     0/    2     0%
+Info: 	         SB_LEDDA_IP:     0/    1     0%
+Info: 	         SB_RGBA_DRV:     1/    1   100%
+Info: 	      ICESTORM_SPRAM:     0/    4     0%
+
+Info: Max frequency for clock 'clk': 70.48 MHz (PASS at 12.00 MHz)
+Info: Max delay posedge clk -> <async>: 17.67 ns
+after route:
+Info: Max frequency for clock 'clk': 64.27 MHz (PASS at 12.00 MHz) <======== !!!!!!!!!
+Info: Max delay posedge clk -> <async>: 18.11 ns
+
+Case version: =====================================================================================
+
+From out:
+=== top ===
+
+   Number of wires:                 57
+   Number of wire bits:            225
+   Number of public wires:          17
+   Number of public wire bits:      86
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:                196
+     SB_CARRY                       46
+     SB_DFF                         45
+     SB_DFFE                         8
+     SB_HFOSC                        1
+     SB_LUT4                        95
+     SB_RGBA_DRV                     1
+
+
+From err:
+
+*** failing in timing analysis for some reason!

@@ -43,6 +43,29 @@ module top_test();
         .seg(segout_if)
     );
 
+    //try the version with unsimplified logic
+    wire[6:0] segout_unsimp;
+    PL_L0_BCD7_if bcd27seg_us(
+        .val(count[3:0]),
+        .dec(count[4]),
+        .seg(segout_unsimp)
+    );
+
+    //try the version with if/opt logic
+    wire[6:0] segout_hybrid;
+    PL_L0_BCD7_hybrid bcd27seg_hybrid(
+        .val(count[3:0]),
+        .dec(count[4]),
+        .seg(segout_hybrid)
+    );
+
+    //try the other version with if/opt logic
+    wire[6:0] segout_hybrid2;
+    PL_L0_BCD7_hybrid2 bcd27seg_hybrid2(
+        .val(count[3:0]),
+        .dec(count[4]),
+        .seg(segout_hybrid2)
+    );
 
     always @(posedge clk) begin
         //this should drive the blinkingness

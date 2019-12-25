@@ -1,13 +1,13 @@
 /*
-PL_L0_BCD7_if.v - implements a purely async/combinatorial BCD to 7-segment converter.
+PL_L0_BCD7_hybrid2.v - implements a purely async/combinatorial BCD to 7-segment converter.
 
 Alternate implementation of PL_L0_BCD7 using an "if" conditioned on the dec flag to see if I can't simplify the graph we get.
 
 So instead of one 5 bit -> 7 bit logic lump, we get two 4-bit -> 7 bit logic lumps.
-...and possibly not even that. They're the same up to 9. Can we also do an if val < 10?
-Let's first try the two lumps way - nah, let's do it the awesome way with two ifs and see what if val < 10 does, if it's even legal
 
-Would it be better just to do a damn case statement? LET'S TRY THAT!
+Generated logic with truth_2_logic.py, qv, with the data files:
+BCD7-hybrid2common.csv
+BCD7-hybrid2hex.csv
 
 the segments are numbered thus:
      ___
@@ -21,8 +21,7 @@ So 1 is the top one there, others should be pretty unambiguous.
 
 Truth table: in all cases lsb to right
       val   seg            seg(hex)
-
-if val < 9:
+if(~dec):
   0:  0000  1 1 0  1 1 1 1 (6F)
   1:  0001  0 1 0  0 1 0 0 (24)
   2:  0010  1 0 1  1 1 1 0 (5E)
@@ -33,8 +32,6 @@ if val < 9:
   7:  0111  0 1 0  0 1 1 0 (26)
   8:  1000  1 1 1  1 1 1 1 (7F)
   9:  1001  1 1 1  0 1 1 1 (77)
-
-if dec == 0:
   A:  1010  0 1 1  1 1 1 1 (3F)
   B:  1011  1 1 1  1 0 0 1 (79)
   C:  1100  1 0 0  1 0 1 1 (4B)
@@ -42,6 +39,16 @@ if dec == 0:
   E:  1110  1 0 1  1 0 1 1 (5B)
   F:  1111  0 0 1  1 0 1 1 (1B)
 else:
+  0:  0000  1 1 0  1 1 1 1 (6F)
+  1:  0001  0 1 0  0 1 0 0 (24)
+  2:  0010  1 0 1  1 1 1 0 (5E)
+  3:  0011  1 1 1  0 1 1 0 (76)
+  4:  0100  0 1 1  0 1 0 1 (35)
+  5:  0101  1 1 1  0 0 1 1 (73)
+  6:  0110  1 1 1  1 0 1 1 (7B)
+  7:  0111  0 1 0  0 1 1 0 (26)
+  8:  1000  1 1 1  1 1 1 1 (7F)
+  9:  1001  1 1 1  0 1 1 1 (77)
   X:  XXXX  0 0 1  0 0 0 0 (10)
 
 
@@ -59,38 +66,32 @@ EOF
 
 `default_nettype none
 
-module PL_L0_BCD7_if(
+module PL_L0_BCD7_hybrid2(
     input wire[3:0] val,
     input wire dec,
     output reg[6:0] seg
 );
     always @(val,dec) begin
         if(val < 10) begin
-            case (val)
-                4'b0000: seg = 7'b1101111; // (6F)
-                4'b0001: seg = 7'b0100100; // (24)
-                4'b0010: seg = 7'b1011110; // (5E)
-                4'b0011: seg = 7'b1110110; // (76)
-                4'b0100: seg = 7'b0110101; // (35)
-                4'b0101: seg = 7'b1110011; // (73)
-                4'b0110: seg = 7'b1111011; // (7B)
-                4'b0111: seg = 7'b0100110; // (26)
-                4'b1000: seg = 7'b1111111; // (7F)
-                4'b1001: seg = 7'b1110111; // (77)
-            endcase
+            //common
+            seg[6] = (val[2] & ~val[1] & val[0]) | (~val[2] & ~val[0]) | (~val[2] & val[1]) | (val[3]) | (val[1] & ~val[0]);
+            seg[5] = (val[0]) | (val[2]) | (~val[1]);
+            seg[4] = (~val[2] & val[1]) | (val[3]) | (val[1] & ~val[0]) | (val[2] & ~val[1]);
+            seg[3] = (~val[2] & ~val[0]) | (val[1] & ~val[0]);
+            seg[2] = (~val[2]) | (~val[1] & ~val[0]) | (val[1] & val[0]);
+            seg[1] = (val[1]) | (val[2] & val[0]) | (val[3]) | (~val[2] & ~val[0]);
+            seg[0] = (~val[1] & ~val[0]) | (val[3]) | (val[2] & ~val[1]) | (val[2] & ~val[0]);
+        end else if(~dec) begin
+            //hex
+            seg[6] = (~val[1]) | (~val[2] & val[0]) | (val[2] & ~val[0]);
+            seg[5] = (~val[2]) | (~val[1] & val[0]);
+            seg[4] = (val[0]) | (val[1]);
+            seg[3] = 1;     //truth_2_logic emitted "();"
+            seg[2] = (~val[1] & val[0]) | (~val[2] & ~val[0]);
+            seg[1] = (~val[0]) | (val[2] & val[1]);
+            seg[0] = (~val[0]) | (val[1]);
         end else begin
-            if(~dec) begin
-                case (val)
-                    4'b1010: seg = 7'b0111111; // (3F)
-                    4'b1011: seg = 7'b1111001; // (79)
-                    4'b1100: seg = 7'b1001011; // (4B)
-                    4'b1101: seg = 7'b1111100; // (7C)
-                    4'b1110: seg = 7'b1011011; // (5B)
-                    4'b1111: seg = 7'b0011011; // (1B)
-                endcase
-            end else begin
-                seg = 7'b0010000;           //the actual logic for this case!
-            end
+            seg = 7'b0010000;            //see if this causes the loop problem; if so, try a bit of logic - looks good!
         end
     end
 endmodule
