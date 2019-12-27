@@ -13,6 +13,8 @@ pll_*.v
 *_out.txt
 *_err.txt
 *-bak
+*.svg
+*.dot
 
 
 # Byte-compiled / optimized / DLL files

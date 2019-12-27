@@ -84,6 +84,6 @@ pll_%.v:
 	vcd2fst $< $@ 1>> sim_$*_out.txt 2>> sim_$*_err.txt
 
 clean:
-	$(RM) *.blif *.asc *.bin *.json .*.d *.vcd *.vvp *.fst *_out.txt *_err.txt
+	$(RM) *.blif *.asc *.bin *.json .*.d *.vcd *.vvp *.fst *_out.txt *_err.txt *.svg *.dot
 
 -include .*.d
