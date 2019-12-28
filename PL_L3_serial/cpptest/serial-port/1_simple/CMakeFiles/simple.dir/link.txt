@@ -1,0 +1,1 @@
+/usr/bin/c++    -rdynamic CMakeFiles/simple.dir/main.cpp.o  -o simple -lboost_date_time -lboost_system -lpthread 

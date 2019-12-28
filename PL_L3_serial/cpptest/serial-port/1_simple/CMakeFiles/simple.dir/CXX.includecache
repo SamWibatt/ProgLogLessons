@@ -1,0 +1,18 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/sean/dev/FPGA/ProgLogLessons/PL_L3_serial/cpptest/serial-port/1_simple/SimpleSerial.h
+boost/asio.hpp
+-
+
+/home/sean/dev/FPGA/ProgLogLessons/PL_L3_serial/cpptest/serial-port/1_simple/main.cpp
+iostream
+-
+SimpleSerial.h
+/home/sean/dev/FPGA/ProgLogLessons/PL_L3_serial/cpptest/serial-port/1_simple/SimpleSerial.h
+
